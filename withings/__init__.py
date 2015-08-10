@@ -41,25 +41,6 @@ from requests_oauthlib import OAuth1, OAuth1Session
 import json
 import datetime
 
-STATUS_CODES = {
-    # Response status codes as defined in documentation
-    # http://oauth.withings.com/api/doc
-    0: u"Operation was successful",
-    247: u"The userid provided is absent, or incorrect",
-    250: u"The provided userid and/or Oauth credentials do not match",
-    286: u"No such subscription was found",
-    293: u"The callback URL is either absent or incorrect",
-    294: u"No such subscription could be deleted",
-    304: u"The comment is either absent or incorrect",
-    305: u"Too many notifications are already set",
-    342: u"The signature (using Oauth) is invalid",
-    343: u"Wrong Notification Callback Url don't exist",
-    601: u"Too Many Request",
-    2554: u"Wrong action or wrong webservice",
-    2555: u"An unknown error occurred",
-    2556: u"Service is not defined",
-}
-
 
 class WithingsCredentials(object):
     def __init__(self, access_token=None, access_token_secret=None,
@@ -69,6 +50,31 @@ class WithingsCredentials(object):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.user_id = user_id
+
+
+class WithingsError(Exception):
+    STATUS_CODES = {
+        # Response status codes as defined in documentation
+        # http://oauth.withings.com/api/doc
+        0: u"Operation was successful",
+        247: u"The userid provided is absent, or incorrect",
+        250: u"The provided userid and/or Oauth credentials do not match",
+        286: u"No such subscription was found",
+        293: u"The callback URL is either absent or incorrect",
+        294: u"No such subscription could be deleted",
+        304: u"The comment is either absent or incorrect",
+        305: u"Too many notifications are already set",
+        342: u"The signature (using Oauth) is invalid",
+        343: u"Wrong Notification Callback Url don't exist",
+        601: u"Too Many Request",
+        2554: u"Wrong action or wrong webservice",
+        2555: u"An unknown error occurred",
+        2556: u"Service is not defined",
+    }
+
+    def __init__(self, status):
+        super(WithingsError, self).__init__(u'{}: {}'.format(status, WithingsError.STATUS_CODES[status]))
+        self.status = status
 
 
 class WithingsAuth(object):
@@ -127,7 +133,7 @@ class WithingsApi(object):
         r = self.client.request(method, '%s/%s' % (self.URL, service), params=params)
         response = json.loads(r.content.decode())
         if response['status'] != 0:
-            raise Exception("%s (status code %s)" % (STATUS_CODES[response['status']], response['status']))
+            raise WithingsError(response['status'])
         return response.get('body', None)
 
     def get_user(self):
