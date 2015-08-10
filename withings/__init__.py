@@ -127,7 +127,7 @@ class WithingsApi(object):
         r = self.client.request(method, '%s/%s' % (self.URL, service), params=params)
         response = json.loads(r.content.decode())
         if response['status'] != 0:
-            raise Exception("Error code %s" % response['status'])
+            raise Exception("%s (status code %s)" % (STATUS_CODES[response['status']], response['status']))
         return response.get('body', None)
 
     def get_user(self):
